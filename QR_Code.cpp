@@ -35,25 +35,47 @@ int main(void )
     Mat qr;
     Mat ref;
     coco.afficherRef();
-    int tailleModule = 9;
+    int tailleModule = 55;
     qr = generateQrPic(qrTab, tailleModule,0);
     ref = generateQrPic(qrRef, tailleModule,1);
     Mat pic;
-    pic = loadImage();
+    string image;
+    cout << "Entrez le nom de l'image que vous voulez utilisez \n";
+    getline(cin, image);
+    image = "4k2.jpg";
+    pic = loadImage(image);
     int tailleImage = qr.rows;
-    pic = scalePic(pic, tailleImage);
+    Size size(tailleImage, tailleImage);
+    //Notre méthode maison n'est peut-être pas la plus utile...
+    //pic = scalePic(pic, tailleImage);
+    cv::resize(pic, pic, size);
+    //pour vérifier ce qu'on fait au cas où
+    imwrite("result/pic.jpg", pic);
     Mat blueNoise;
-    cout << " On définit le bruit qui est : blue_noise.jpg ";
-    blueNoise = loadImage();
-    blueNoise = scalePic(blueNoise, tailleImage);
+    string noise("blue_noise.jpg");
+    //cout << " On définit le bruit qui est : blue_noise.jpg ";
+    //getline(cin, noise);
+    string noise("blue_noise.jpg");
+    blueNoise = loadImage(noise);
+    
+    cv::resize(blueNoise, blueNoise, size);
+    //blueNoise = scalePic(blueNoise, tailleImage);
+    //pour vérifier ce qu'on fait au cas où
+    imwrite("result/blueNoise.jpg", blueNoise);
     //alphaBlend(qr, pic, ref);
     Mat mask;
-    int px = 3;
+    int px = 15;
     mask = pixelMaskSelect(px, tailleImage, tailleModule );
-    vector<vector<int>> luminance;
+    vector<vector<float>> luminance;
     luminance = luminanceSelect(qr, mask, blueNoise);
+
+    cout << "size " << luminance[0].size() << endl;
+    cout << "size 2 " << luminance.size() << endl;
+
     Mat finalImage;
     finalImage = finalColor(ref, pic, luminance);
+    //afficherImage("L'ultime fusion", finalImage);
+    imwrite("result/fin.jpg", finalImage);
     return EXIT_SUCCESS;
 }
 

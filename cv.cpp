@@ -80,13 +80,10 @@ Mat generateQrPic(vector<vector<int>> const qrTab, int const px, int const mode)
     return qrCode;
 }
 
-Mat loadImage()
+Mat loadImage(string const& image)
 {
     Mat pic;
     string chemin("Image/");
-    string image;
-    cout << "Entrez le nom de l'image que vous voulez utilisez \n";
-    getline(cin, image);
     string fullPic = chemin.append(image);
     cout << fullPic << endl;
     pic = imread(chemin, IMREAD_COLOR);
@@ -143,27 +140,31 @@ cv::Mat pixelMaskSelect(int const px, int const tailleMask, int const tailleModu
 }
 
 /* ===============LUMINANCE SELECTION ==================*/
-vector<vector<int>> luminanceSelect(Mat const& qr,Mat const& mask, Mat const& noise)
+vector<vector<float>> luminanceSelect(Mat const& qr,Mat const& mask, Mat const& noise)
 {   
     //Le masque est déjà en niveau de gris mais pas le reste
     Mat qrGray;
     Mat noiseGray;
-    
     cvtColor(qr, qrGray, COLOR_BGR2GRAY);
+    cvtColor(noise, noiseGray, COLOR_BGR2GRAY);
     cvtColor(noise, noiseGray, COLOR_BGR2GRAY);
 
     int seuilNoise = 128;
-    vector<vector<int>> luminance;
+    vector<vector<float>> luminance;
     int ligne = qr.rows;
     int colonne = qr.cols;
     for (int i = 0; i < ligne; i++)
     {
-        vector<int> ligne;
+        vector<float> ligne;
         luminance.push_back(ligne);
         for (int j = 0; j < colonne; j++)
         {
+            //cout << "noiseGray" <<  (int)noiseGray.at<uchar>(i, j) << endl;
+            //cout << "mask " <<(int) mask.at<uchar>(i, j) << endl;
+            //On vient faire tous les tests comme définie en fonction
             if (noiseGray.at<uchar>(i, j) >= seuilNoise || mask.at<uchar>(i, j) >= 128)
             {
+                //cout << "qrGray" << (int)qrGray.at<uchar>(i, j) << endl;
                 if (mask.at<uchar>(i, j) < 128 && noiseGray.at<uchar>(i, j) >= seuilNoise)
                 {
                     if (qrGray.at<uchar>(i, j) < 128)
@@ -184,7 +185,6 @@ vector<vector<int>> luminanceSelect(Mat const& qr,Mat const& mask, Mat const& no
                 }
             }
             else{ luminance[i].push_back(-1); }
-
         }
     }
     return luminance;
@@ -208,54 +208,135 @@ vector<float>  bgr2HSL(float b, float g, float r)
     float delta = cMax - cMin;
     //Pour L
     L = (cMax + cMin) / 2;
+    //Pour H et S
     if (delta == 0)
     {
         H = 0;
         S = 0;
     }
     else {
+        //S
         S = delta / (1 - abs(2 * L - 1));
+        //H
         if (cMax == r)
         {
-            H = 60*(())
+            H = 60 * (((g - b) / delta));
         }
         if (cMax == g)
         {
-
+            H = 60 * (((b - r) / delta)+2);
         }
         if (cMax == b)
         {
-
+            H = 60 * (((r - g) / delta)+4);
         }
     }
 
-
-    vector<float> hsl;
+    vector<float> hsl(3,0);
     hsl[0] = H;
     hsl[1] = S;
     hsl[2] = L;
     return hsl;
 }
 
+void divEuclidienne(float& h, int modulo){
+    while (h > modulo) {h -= modulo;}
+}
 vector<float> hsl2BGR(float h, float s, float l)
 {
+    
+    float C = (1 - abs(2 * l - 1)) * s;
+    divEuclidienne(h, 2);
+    float X = C * (1 - abs(h - 1));
+    float m = l - C / 2;
+    float r = 0;
+    float g = 0;
+    float b = 0;
+    if (0 <= h && h < 60)
+    {
+        r = C;
+        g = X;
+        b = 0;
+    }
+    if (60 <= h && h < 120)
+    {
+        r = X;
+        g = C;
+        b = 0;
+    }
+    if (120 <= h && h < 180)
+    {
+        r = 0;
+        g = C;
+        b = X;
+    }
+    if (180 <= h && h < 240)
+    {
+        r = 0;
+        g = X;
+        b = C;
+    }
+    if (240 <= h && h < 300)
+    {
+        r = X;
+        g = 0;
+        b = C;
+    }
+    if (300 <= h && h < 360)
+    {
+        r = C;
+        g = 0;
+        b = X;
+    }
 
+    vector<float> bgr(3,0);
+    r = (r + m) * 255;
+    b = (b + m) * 255;
+    g = (g + m) * 255;
 
+    bgr[2] = round(b);
+    bgr[1] = round(g);
+    bgr[0] = round(r);
+
+    return bgr;
 }
 
 float fL(float h, float s, float l)
 {
-
+    vector<float> weight{ 0.298,0.587,0.1140 };
+    vector<float> t1;
+    t1 = hsl2BGR(h, s, l);
+    float L;
+    //Pour L, on prend RGB entre 0 et 1
+    L = weight[0] * t1[0]/255 + weight[1] * t1[1]/255 + weight[2] * t1[2]/255;
+    //cout << "L " << L << endl;
+    return L;
 }
+
+
 Vec3b lFinal(Vec3b const & bgr, float const lumi)
 {
     float L=2;
     float valeurActuelle = 255;
     float test = 0;
     float pas = 0.01;
-    vector<float> weight{ 0.298,0.587,0.1140 };
     vector<float> h;
-    h = bgr2HSL(bgr[0], bgr[1], bgr[2]);
+    vector<float> r;
+    
+    //cout << "lumi " << lumi;
+
+    /*
+    //On fait un test con mais utile là...
+    r = { (float)bgr[0], (float)bgr[1], (float)bgr[2] };
+    cout << "b " << r[0] << " g " << r[1] << " r " << r[2] << endl;
+    h = bgr2HSL((float)bgr[0], (float)bgr[1], (float)bgr[2]);
+    cout << "h " << h[0] << " s " << h[1] << " l " << h[2]<<endl;
+    r = hsl2BGR(h[0], h[1], h[2]);
+    cout << "b " << r[0] << " g " << r[1] << " r " << r[2] << endl;
+    h = bgr2HSL(r[0], r[1], r[2]);
+    cout << "h " << h[0] << " s " << h[1] << " l " << h[2] <<endl;
+    */
+    h = bgr2HSL((float)bgr[0], (float)bgr[1], (float)bgr[2]);
     while (test < 1)
     {
         float L2 = abs(fL(h[0], h[1], test) - lumi);
@@ -266,26 +347,52 @@ Vec3b lFinal(Vec3b const & bgr, float const lumi)
         }
         test += pas;
     }
+    //cout << "L " << L << endl;
     h = hsl2BGR(h[0], h[1], L);
-    Vec3b b2g2r2;
-    b2g2r2[0] = h[0];
-    b2g2r2[1] = h[1];
-    b2g2r2[2] = h[2];
+    int b2 = (int)round(h[0]);
+    int g2 = (int)round(h[1]);
+    int r2 = (int)round(h[2]);
+    //cout << "b " << b2 << " g " << g2 << " r " << r2 << endl;
+    Vec3b b2g2r2((uchar)b2, (uchar)g2, (uchar)r2);
+
     return b2g2r2;
 }
 
 
-Mat finalColor(Mat const& mask, Mat const& pic, vector<vector<int>> const& luminanceVoulue)
+Mat finalColor(Mat mask, Mat pic, vector<vector<float>> const& luminanceVoulue)
 {
     int ligne = pic.rows;
     int colonne = pic.cols;
+    cout << "ligne " << ligne << endl;
+    cout << "ligne ref " << mask.rows << endl;
     Mat final;
+    final.create(ligne, colonne, CV_8UC3);
+
     for (int i = 0; i < ligne; i++)
     {
+        //cout << " i Final Color " << i << endl;
         for (int j = 0; j < colonne; j++)
         {
-            Vec3b pixFinal;
-            final.at<Vec3b>(i, j) = pixFinal;
+            //cout << " j Final Color " << j << endl;
+            if ((int)mask.at<Vec3b>(i, j)[0] == 128) 
+            {
+                Vec3b pixFinal;
+                Vec3b rgb;
+                rgb = pic.at<Vec3b>(i, j);
+                float lumi = luminanceVoulue[i][j];
+                if (lumi == -1)
+                {
+                    pixFinal = rgb;
+                }
+                else {
+                    pixFinal = lFinal(rgb, luminanceVoulue[i][j]);
+                }
+                final.at<Vec3b>(i, j) = pixFinal;
+            }
+            else 
+            {
+                final.at<Vec3b>(i, j) = (Vec3b) mask.at<Vec3b>(i, j);
+            }
         }
     }
 
