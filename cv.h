@@ -25,7 +25,7 @@ cv::Mat generateQrPic(std::vector<std::vector<int>> const qrTab, int const px, i
 cv::Mat alphaBlend(cv::Mat qr, cv::Mat pic, cv::Mat qrRef);
 
 //Permet de charger l'image et de l'afficher
-cv::Mat loadImage();
+cv::Mat loadImage(std::string const& image);
 //Permet de mettre l'image à la bonne échelle
 cv::Mat scalePic(cv::Mat pic, int taille);
 
@@ -48,7 +48,7 @@ bc (=0) if Mi,j = 1 , qi,j = 1
 ac (=1) if Mi,j = 1 , qi,j = 0
 Yi,j (= -1) otherwise, where Yi,j is the luminance of the normal image
 */
-std::vector<std::vector<int>> luminanceSelect(cv::Mat const& qr, cv::Mat const& mask, cv::Mat const& noise);
+std::vector<std::vector<float>> luminanceSelect(cv::Mat const& qr, cv::Mat const& mask, cv::Mat const& noise);
 
 
 /*
@@ -58,8 +58,9 @@ Y = 0.2989R + 0.5870G + 0.114B
 On a RGB -> HSL
 puis L* = argmin|f(L)-luminancePixel| pour les valeurs de L
 où Y = f(L) = Transpose(w) * (R,G,B);
+on prend RGB entre 0 et 1
 w est le poids de la luminance sur les différentes composantes
 w = [0.298, 0.587, 0.1140];
 
 */
-cv::Mat finalColor(cv::Mat const& mask, cv::Mat const& pic, std::vector<std::vector<int>> const& luminanceVoulue);
+cv::Mat finalColor(cv::Mat mask, cv::Mat pic, std::vector<std::vector<float>> const& luminanceVoulue);
