@@ -35,14 +35,14 @@ int main(void )
     Mat qr;
     Mat ref;
     coco.afficherRef();
-    int tailleModule = 55;
+    int tailleModule = 15;
     qr = generateQrPic(qrTab, tailleModule,0);
     ref = generateQrPic(qrRef, tailleModule,1);
     Mat pic;
     string image;
     cout << "Entrez le nom de l'image que vous voulez utilisez \n";
     getline(cin, image);
-    image = "4k2.jpg";
+    //image = "4k2.jpg";
     pic = loadImage(image);
     int tailleImage = qr.rows;
     Size size(tailleImage, tailleImage);
@@ -52,10 +52,10 @@ int main(void )
     //pour vérifier ce qu'on fait au cas où
     imwrite("result/pic.jpg", pic);
     Mat blueNoise;
-    string noise("blue_noise.jpg");
+    string noise;
     //cout << " On définit le bruit qui est : blue_noise.jpg ";
     //getline(cin, noise);
-    string noise("blue_noise.jpg");
+    noise = ("blue_noise.jpg");
     blueNoise = loadImage(noise);
     
     cv::resize(blueNoise, blueNoise, size);
@@ -64,13 +64,11 @@ int main(void )
     imwrite("result/blueNoise.jpg", blueNoise);
     //alphaBlend(qr, pic, ref);
     Mat mask;
-    int px = 15;
+    int px = 3;
     mask = pixelMaskSelect(px, tailleImage, tailleModule );
     vector<vector<float>> luminance;
-    luminance = luminanceSelect(qr, mask, blueNoise);
-
-    cout << "size " << luminance[0].size() << endl;
-    cout << "size 2 " << luminance.size() << endl;
+    int selectLocal = 10;
+    luminance = luminanceSelectLocal(qr, mask, blueNoise, pic, selectLocal);
 
     Mat finalImage;
     finalImage = finalColor(ref, pic, luminance);
