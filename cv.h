@@ -50,6 +50,17 @@ Yi,j (= -1) otherwise, where Yi,j is the luminance of the normal image
 */
 std::vector<std::vector<float>> luminanceSelect(cv::Mat const& qr, cv::Mat const& mask, cv::Mat const& noise);
 
+//Des fonctions intermédiaires dont on va se servir à divers endroits
+std::vector<float> bgr2HSL(float b, float g, float r);
+void divEuclidienne(float& h, int modulo);
+std::vector<float> hsl2BGR(float h, float s, float l);
+float fL(float h, float s, float l);
+cv::Vec3b lFinal(cv::Vec3b const& bgr, float const lumi);
+
+//Tout pareil sauf que b et a vont dépendre de la zone local de l'image où ils sont
+//On prend une zone de 
+std::vector<std::vector<float>> luminanceSelectLocal(cv::Mat const& qr, cv::Mat const& mask, cv::Mat const& noise, cv::Mat const& pic, int tailleLocal);
+
 
 /*
 Color Select : La dernière étape où on calcule l'image finale

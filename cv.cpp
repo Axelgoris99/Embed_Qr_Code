@@ -189,6 +189,130 @@ vector<vector<float>> luminanceSelect(Mat const& qr,Mat const& mask, Mat const& 
     }
     return luminance;
 }
+vector<vector<float>> luminanceSelectLocal(Mat const& qr, Mat const& mask, Mat const& noise, Mat const& pic, int tailleLocal)
+{
+    //Le masque est déjà en niveau de gris mais pas le reste
+    Mat qrGray;
+    Mat noiseGray;
+    cvtColor(qr, qrGray, COLOR_BGR2GRAY);
+    cvtColor(noise, noiseGray, COLOR_BGR2GRAY);
+    cvtColor(noise, noiseGray, COLOR_BGR2GRAY);
+
+    int seuilNoise = 128;
+    vector<vector<float>> luminance;
+
+
+    int ligne = qr.rows;
+    int colonne = qr.cols;
+    int tailleLocalI = tailleLocal;
+    int tailleLocalJ = tailleLocal;
+
+    float alpha = 0.6;
+    float beta = 0.4;
+    float alphaC = 0.9;
+    float betaC = 0.1;
+    //On va déterminer des carrés de manière locale et dans ses carrés, on va avoir une luminance différente
+    //On rajoute un +1 pour ne pas avoir de problème de taille;
+    int localX = (int)floor(ligne / tailleLocal)+1;
+    int localY = (int)floor(colonne / tailleLocal)+1;
+
+    vector<vector<vector<float>>> luminanceLocal;
+    luminanceLocal.resize(ligne);
+    for (int i = 0; i < ligne; i++)
+    {
+        luminanceLocal[i].resize(colonne);
+
+    }
+
+    for (int i = 0; i < localX; i++)
+    {
+        for (int j = 0; j < localY; j++)
+        {
+            //Les luminances du carré
+            float lumiMax =0;
+            float lumiMin =1;
+            //vu qu'on a rajouté un +1, si jamais, ça dépasse, on s'assure que ça ne dépasse pas aussi bien sur i que sur j
+            if (i * tailleLocal + tailleLocal > ligne) { tailleLocalI = ligne - i * tailleLocal; }
+            else { tailleLocalI = tailleLocal; }
+            if (j * tailleLocal + tailleLocal > colonne) { tailleLocalJ = ligne - j * tailleLocal; }
+            else { tailleLocalJ = tailleLocal; }
+
+            //cout << "tailleLocalI" << tailleLocalI << " tailleLocalJ" << tailleLocalJ << endl;
+            //cout << i * tailleLocal + tailleLocalI<<endl;
+            //cout << i * tailleLocal + tailleLocalJ << endl;
+            for (int k = 0; k < tailleLocalI; k++)
+            {
+                for (int n = 0; n < tailleLocalJ; n++)
+                {
+                    
+                    Vec3b local;
+                    local = pic.at<Vec3b>(i * tailleLocal + k, j * tailleLocal + n);
+                    
+                    float lumi = bgr2HSL(local[0], local[1], local[2])[2];
+                    if (lumi > lumiMax) { lumiMax = lumi; }
+                    if (lumi < lumiMin) { lumiMin = lumi; }
+                }
+            }
+
+            for (int k = 0; k < tailleLocalI; k++)
+            {
+                for (int n = 0; n < tailleLocalJ; n++)
+                {   
+                    luminanceLocal[i*tailleLocal+k][j*tailleLocal+n].push_back(lumiMin);
+                    luminanceLocal[i*tailleLocal+k][j*tailleLocal+n].push_back(lumiMax);
+                   
+                }
+            }
+        }
+    }
+    //On met la liste de luminance à jour
+    for (int i = 0; i < ligne; i++)
+    {
+        vector<float> ligne;
+        luminance.push_back(ligne);
+        for (int j = 0; j < colonne; j++)
+        {
+            //lumiMax est en deuxième position et lumiMin en premier
+            //cout << "i " << i << " j " << j << endl;
+            float lumiMin= luminanceLocal[i][j][0];
+            float lumiMax = luminanceLocal[i][j][1];
+            //Pour avoir une luminance qui n'est pas partout la même
+            beta = (lumiMax + lumiMin) / 2 * 0.7;
+            alpha = (lumiMax + lumiMin) / 2 * 1.3;
+            if (lumiMin > beta || lumiMin > 0.3) { lumiMin = 0.3; }
+            betaC = lumiMin;
+            if (lumiMax < alpha || lumiMax < 0.7) { lumiMax = 0.7; }
+            alphaC = lumiMax;
+            //cout << "noiseGray" <<  (int)noiseGray.at<uchar>(i, j) << endl;
+            //cout << "mask " <<(int) mask.at<uchar>(i, j) << endl;
+            //On vient faire tous les tests comme définie en fonction
+            if (noiseGray.at<uchar>(i, j) >= seuilNoise || mask.at<uchar>(i, j) >= 128)
+            {
+                //cout << "qrGray" << (int)qrGray.at<uchar>(i, j) << endl;
+                if (mask.at<uchar>(i, j) < 128 && noiseGray.at<uchar>(i, j) >= seuilNoise)
+                {
+                    if (qrGray.at<uchar>(i, j) < 128)
+                    {
+                        luminance[i].push_back(beta);
+                    }
+                    else {
+                        luminance[i].push_back(alpha);
+                    }
+                }
+                if (mask.at<uchar>(i, j) >= 128)
+                {
+                    if (qrGray.at<uchar>(i, j) < 128)
+                    {
+                        luminance[i].push_back(betaC);
+                    }
+                    else { luminance[i].push_back(alphaC); }
+                }
+            }
+            else { luminance[i].push_back(-1); }
+        }
+    }
+    return luminance;
+}
 
 /*=========================L'IMAGE FINALE ==================*/
 vector<float>  bgr2HSL(float b, float g, float r)
@@ -399,7 +523,7 @@ Mat finalColor(Mat mask, Mat pic, vector<vector<float>> const& luminanceVoulue)
     return final;
 }
 
-/*========= TENTATIVE DE FUSION */
+/*========= FUSION PAR TRANSPARENCE ====================== */
 Mat alphaBlend(Mat qr, Mat pic, Mat qrRef)
 {
     double alpha = 0.5; double beta; double input;
