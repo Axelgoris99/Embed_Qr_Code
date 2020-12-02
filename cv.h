@@ -2,6 +2,7 @@
 #include <opencv2/core.hpp>
 #include <vector>
 #include <string>
+ 
 
 //Fonction afficherImage
 //Permet d'afficher une image et d'afficher le texte de la fenêtre
