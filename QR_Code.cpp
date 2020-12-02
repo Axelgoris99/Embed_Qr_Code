@@ -42,6 +42,9 @@ int main(void )
     string image;
     cout << "Entrez le nom de l'image que vous voulez utilisez \n";
     getline(cin, image);
+    string sortie;
+    cout << "Entrez le nom de l'image avec le Qr Code en sortie \n";
+    getline(cin, sortie);
     //image = "4k2.jpg";
     pic = loadImage(image);
     int tailleImage = qr.rows;
@@ -54,8 +57,8 @@ int main(void )
     Mat blueNoise;
     string noise;
     //cout << " On définit le bruit qui est : blue_noise.jpg ";
-    //getline(cin, noise);
     noise = ("blue_noise.jpg");
+    //getline(cin, noise);
     blueNoise = loadImage(noise);
     
     cv::resize(blueNoise, blueNoise, size);
@@ -68,22 +71,14 @@ int main(void )
     mask = pixelMaskSelect(px, tailleImage, tailleModule );
     vector<vector<float>> luminance;
     int selectLocal = 10;
+    if (selectLocal > tailleModule) { selectLocal = tailleModule; }
     luminance = luminanceSelectLocal(qr, mask, blueNoise, pic, selectLocal);
 
     Mat finalImage;
     finalImage = finalColor(ref, pic, luminance);
     //afficherImage("L'ultime fusion", finalImage);
-    imwrite("result/fin.jpg", finalImage);
+    string output("result/");
+    output += sortie;
+    imwrite(output, finalImage);
     return EXIT_SUCCESS;
 }
-
-// Exécuter le programme : Ctrl+F5 ou menu Déboguer > Exécuter sans débogage
-// Déboguer le programme : F5 ou menu Déboguer > Démarrer le débogage
-
-// Astuces pour bien démarrer : 
-//   1. Utilisez la fenêtre Explorateur de solutions pour ajouter des fichiers et les gérer.
-//   2. Utilisez la fenêtre Team Explorer pour vous connecter au contrôle de code source.
-//   3. Utilisez la fenêtre Sortie pour voir la sortie de la génération et d'autres messages.
-//   4. Utilisez la fenêtre Liste d'erreurs pour voir les erreurs.
-//   5. Accédez à Projet > Ajouter un nouvel élément pour créer des fichiers de code, ou à Projet > Ajouter un élément existant pour ajouter des fichiers de code existants au projet.
-//   6. Pour rouvrir ce projet plus tard, accédez à Fichier > Ouvrir > Projet et sélectionnez le fichier .sln.
