@@ -76,3 +76,11 @@ w = [0.298, 0.587, 0.1140];
 
 */
 cv::Mat finalColor(cv::Mat mask, cv::Mat pic, std::vector<std::vector<float>> const& luminanceVoulue);
+
+/*
+Retirer Bord : Permet de retirer les points dans la "zone de silence"
+Ces points sont sur le bord sur 4*TailleModule
+On leur donne la valeur de la photo finale
+On travaille directement sur la photo
+*/
+void retirerBord(cv::Mat & finalImage, int const& tailleModule, cv::Mat const& pic);

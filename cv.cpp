@@ -316,6 +316,10 @@ vector<vector<float>> luminanceSelectLocal(Mat const& qr, Mat const& mask, Mat c
 }
 
 /*=========================L'IMAGE FINALE ==================*/
+void divEuclidienne(float& h, int modulo) {
+    while (h > modulo) { h -= modulo; }
+}
+
 vector<float>  bgr2HSL(float b, float g, float r)
 {
     //cout << " 1 : b " << b << " g " << g << " r " << r << endl;
@@ -346,7 +350,9 @@ vector<float>  bgr2HSL(float b, float g, float r)
         //H
         if (cMax == r)
         {
-            H = 60 * (((g - b) / delta));
+            float x = (g - b) / delta;
+            divEuclidienne(x, 6);
+            H = 60 * x;
         }
         if (cMax == g)
         {
@@ -366,15 +372,13 @@ vector<float>  bgr2HSL(float b, float g, float r)
     return hsl;
 }
 
-void divEuclidienne(float& h, int modulo){
-    while (h > modulo) {h -= modulo;}
-}
+
 vector<float> hsl2BGR(float h, float s, float l)
 {
     float C = (1 - abs(2 * l - 1)) * s;
-    h = h / 60;
-    divEuclidienne(h, 2);
-    float X = C * (1 - abs(h - 1));
+    float h2 = h / 60;
+    divEuclidienne(h2, 2);
+    float X = C * (1 - abs(h2 - 1));
     float m = l - C / 2;
     float r = 0;
     float g = 0;
@@ -421,9 +425,9 @@ vector<float> hsl2BGR(float h, float s, float l)
     b = (b + m) * 255;
     g = (g + m) * 255;
 
-    bgr[2] = round(r);
-    bgr[1] = round(g);
-    bgr[0] = round(b);
+    bgr[2] = r;
+    bgr[1] = g;
+    bgr[0] = b;
 
     return bgr;
 }
@@ -492,11 +496,11 @@ Vec3b lFinal(Vec3b const& bgr, float const lumi)
     }
     //cout << "h " << h[0] << " s " << h[1] << " L " << L << endl;
     h = hsl2BGR(h[0], h[1], L);
-    int b2 = (int)round(h[0]);
-    int g2 = (int)round(h[1]);
-    int r2 = (int)round(h[2]);
+    uchar b2 = (uchar)round(h[0]);
+    uchar g2 = (uchar)round(h[1]);
+    uchar r2 = (uchar)round(h[2]);
     //cout << "b " << b2 << " g " << g2 << " r " << r2 << endl << endl;
-    Vec3b b2g2r2((uchar)b2, (uchar)g2, (uchar)r2);
+    Vec3b b2g2r2(b2, g2, r2);
 
     return b2g2r2;
 }
@@ -541,6 +545,25 @@ Mat finalColor(Mat mask, Mat pic, vector<vector<float>> const& luminanceVoulue)
 
     return final;
 }
+
+
+/* ========= RETIRER ZONE DE SILENCE ==============*/
+void retirerBord(Mat & finalImage, int const& tailleModule, Mat const& pic)
+{
+    int taille = tailleModule * 4;
+    int tailleGrand = finalImage.rows;
+    for (int i = 0; i < taille; i++)
+    {
+        for (int j = 0; j < tailleGrand; j++)
+        {
+            finalImage.at<Vec3b>(i, j) = pic.at<Vec3b>(i, j);
+            finalImage.at<Vec3b>(j, i) = pic.at<Vec3b>(j, i);
+            finalImage.at<Vec3b>(tailleGrand-i-1, j) = pic.at<Vec3b>(tailleGrand-i-1, j);
+            finalImage.at<Vec3b>(j, tailleGrand-1-i) = pic.at<Vec3b>(j, tailleGrand-i-1);
+        }
+    }
+}
+
 
 /*========= FUSION PAR TRANSPARENCE ====================== */
 Mat alphaBlend(Mat qr, Mat pic, Mat qrRef)

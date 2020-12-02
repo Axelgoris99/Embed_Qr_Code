@@ -82,6 +82,9 @@ void embedQrPic(string const& input, string const& entre, string const& sortie, 
     Mat finalImage;
     finalImage = finalColor(ref, pic, luminance);
     //afficherImage("L'ultime fusion", finalImage);
+    //Pas optimisé car on repasse sur ce que l'on a déjà fais mais je ne sais pas si ça marche bien comme ça
+    //retirerBord(finalImage, tailleModule, pic);
+
     string output("result/");
     output += sortie + ".jpg";
     imwrite(output, finalImage);
