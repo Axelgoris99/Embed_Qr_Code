@@ -74,7 +74,7 @@ Mat generateQrPic(vector<vector<int>> const qrTab, int const px, int const mode)
     {
         imwrite("result/test.jpg", qrCode);
     }
-    else { imwrite("result/ref.jpg", qrCode); }
+    //else { imwrite("result/ref.jpg", qrCode); }
     //afficherImage("Notre premier QrCode en image !", qrCode);
 
     return qrCode;
@@ -135,7 +135,7 @@ cv::Mat pixelMaskSelect(int const px, int const tailleMask, int const tailleModu
         }
     }
 
-    imwrite("result/mask.jpg", mask);
+    //imwrite("result/mask.jpg", mask);
     return mask;
 }
 
@@ -195,7 +195,6 @@ vector<vector<float>> luminanceSelectLocal(Mat const& qr, Mat const& mask, Mat c
     Mat qrGray;
     Mat noiseGray;
     cvtColor(qr, qrGray, COLOR_BGR2GRAY);
-    cvtColor(noise, noiseGray, COLOR_BGR2GRAY);
     cvtColor(noise, noiseGray, COLOR_BGR2GRAY);
 
     int seuilNoise = 128;
@@ -279,9 +278,11 @@ vector<vector<float>> luminanceSelectLocal(Mat const& qr, Mat const& mask, Mat c
             //Pour avoir une luminance qui n'est pas partout la même
             beta = (lumiMax + lumiMin) / 2 * 0.7;
             alpha = (lumiMax + lumiMin) / 2 * 1.3;
-            if (lumiMin > beta || lumiMin > 0.3) { lumiMin = 0.3; }
+            if (lumiMin > beta) { lumiMin = beta; }
+            if(lumiMin > 0.3){ lumiMin = 0.3; }
             betaC = lumiMin;
-            if (lumiMax < alpha || lumiMax < 0.7) { lumiMax = 0.7; }
+            if (lumiMax < alpha ) { lumiMax = alpha; }
+            if (lumiMax < 0.7 ) { lumiMax = 0.7; }
             alphaC = lumiMax;
             //cout << "noiseGray" <<  (int)noiseGray.at<uchar>(i, j) << endl;
             //cout << "mask " <<(int) mask.at<uchar>(i, j) << endl;
@@ -317,6 +318,7 @@ vector<vector<float>> luminanceSelectLocal(Mat const& qr, Mat const& mask, Mat c
 /*=========================L'IMAGE FINALE ==================*/
 vector<float>  bgr2HSL(float b, float g, float r)
 {
+    //cout << " 1 : b " << b << " g " << g << " r " << r << endl;
     b = b / 255;
     g = g / 255;
     r = r / 255;
@@ -360,6 +362,7 @@ vector<float>  bgr2HSL(float b, float g, float r)
     hsl[0] = H;
     hsl[1] = S;
     hsl[2] = L;
+    //cout << " 1 : h " << H << " s " << S << " l " << L << endl;
     return hsl;
 }
 
@@ -368,8 +371,8 @@ void divEuclidienne(float& h, int modulo){
 }
 vector<float> hsl2BGR(float h, float s, float l)
 {
-    
     float C = (1 - abs(2 * l - 1)) * s;
+    h = h / 60;
     divEuclidienne(h, 2);
     float X = C * (1 - abs(h - 1));
     float m = l - C / 2;
@@ -438,15 +441,15 @@ float fL(float h, float s, float l)
 }
 
 
-Vec3b lFinal(Vec3b const & bgr, float const lumi)
+Vec3b lFinal(Vec3b const& bgr, float const lumi)
 {
-    float L=2;
+    float L = 2;
     float valeurActuelle = 255;
     float test = 0;
     float pas = 0.01;
     vector<float> h;
     vector<float> r;
-    
+
     //cout << "lumi " << lumi;
 
     /*
@@ -464,7 +467,7 @@ Vec3b lFinal(Vec3b const & bgr, float const lumi)
     while (test < 1)
     {
         float L2 = abs(fL(h[0], h[1], test) - lumi);
-        if ( L2 < valeurActuelle)
+        if (L2 < valeurActuelle)
         {
             valeurActuelle = L2;
             L = test;
@@ -472,8 +475,10 @@ Vec3b lFinal(Vec3b const & bgr, float const lumi)
         test += pas;
     }
     //Histoire de raffiner encore un peu le calcul de la luminance
-    test = L-0.005;
+    if (L > 0.005) { test = L - 0.005; }
+    else { test = 0; }
     float sup = L + 0.005;
+    if (sup > 1) { sup = 1; }
     pas = 0.001;
     while (test < sup)
     {
@@ -485,12 +490,12 @@ Vec3b lFinal(Vec3b const & bgr, float const lumi)
         }
         test += pas;
     }
-    //cout << "L " << L << endl;
+    //cout << "h " << h[0] << " s " << h[1] << " L " << L << endl;
     h = hsl2BGR(h[0], h[1], L);
     int b2 = (int)round(h[0]);
     int g2 = (int)round(h[1]);
     int r2 = (int)round(h[2]);
-    //cout << "b " << b2 << " g " << g2 << " r " << r2 << endl;
+    //cout << "b " << b2 << " g " << g2 << " r " << r2 << endl << endl;
     Vec3b b2g2r2((uchar)b2, (uchar)g2, (uchar)r2);
 
     return b2g2r2;

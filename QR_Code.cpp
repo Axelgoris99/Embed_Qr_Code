@@ -20,15 +20,37 @@ De plus, il ne marche que pour les charactères alpha numériques.
 using namespace std;
 using namespace cv;
 
+void embedQrPic(string const& input, string const& entre, string const& sortie, string const& bruit);
 
 int main(void )
 {
     //Normalement tout marche pour générer des QR code
-    string test;
+    string message;
     cout << "Entrez la phrase a convertir \n";
-    getline(cin, test);
-    
-    qrCode coco = qrGen(test);
+    getline(cin, message);
+
+    string image;
+    cout << "Entrez le nom de l'image que vous voulez utilisez \n";
+    getline(cin, image);
+
+    string sortie;
+    cout << "Entrez le nom de l'image avec le Qr Code en sortie \n";
+    getline(cin, sortie);
+
+    string noise;
+    cout << " On definit le bruit qui est de la forme : blue_noise.jpg \n";
+    getline(cin, noise);
+
+    embedQrPic(message, image, sortie, noise);
+
+    return EXIT_SUCCESS;
+}
+
+
+void embedQrPic(string const& input, string const& entre, string const& sortie, string const& bruit) {
+
+    //On génère le Qr Code
+    qrCode coco = qrGen(input);
     coco.afficherQr();
     vector<vector<int>> qrTab = coco.getQr();
     vector<vector<int>> qrRef = coco.getRef();
@@ -36,49 +58,31 @@ int main(void )
     Mat ref;
     coco.afficherRef();
     int tailleModule = 15;
-    qr = generateQrPic(qrTab, tailleModule,0);
-    ref = generateQrPic(qrRef, tailleModule,1);
+    qr = generateQrPic(qrTab, tailleModule, 0);
+    ref = generateQrPic(qrRef, tailleModule, 1);
+    //On charge l'image en entrée
     Mat pic;
-    string image;
-    cout << "Entrez le nom de l'image que vous voulez utilisez \n";
-    getline(cin, image);
-    string sortie;
-    cout << "Entrez le nom de l'image avec le Qr Code en sortie \n";
-    getline(cin, sortie);
-    //image = "4k2.jpg";
-    pic = loadImage(image);
+    pic = loadImage(entre);
     int tailleImage = qr.rows;
     Size size(tailleImage, tailleImage);
-    //Notre méthode maison n'est peut-être pas la plus utile...
-    //pic = scalePic(pic, tailleImage);
     cv::resize(pic, pic, size);
-    //pour vérifier ce qu'on fait au cas où
-    imwrite("result/pic.jpg", pic);
+    //On charge le bruit et sélectionne le mask
     Mat blueNoise;
-    string noise;
-    //cout << " On définit le bruit qui est : blue_noise.jpg ";
-    noise = ("blue_noise.jpg");
-    //getline(cin, noise);
-    blueNoise = loadImage(noise);
-    
+    blueNoise = loadImage(bruit);
     cv::resize(blueNoise, blueNoise, size);
-    //blueNoise = scalePic(blueNoise, tailleImage);
-    //pour vérifier ce qu'on fait au cas où
-    imwrite("result/blueNoise.jpg", blueNoise);
-    //alphaBlend(qr, pic, ref);
     Mat mask;
     int px = 3;
-    mask = pixelMaskSelect(px, tailleImage, tailleModule );
+    mask = pixelMaskSelect(px, tailleImage, tailleModule);
+    //On sélectionne les luminances voulues des pixels
     vector<vector<float>> luminance;
-    int selectLocal = 10;
-    if (selectLocal > tailleModule) { selectLocal = tailleModule; }
+    int selectLocal = 1;
     luminance = luminanceSelectLocal(qr, mask, blueNoise, pic, selectLocal);
-
+    
+    //L'image finale
     Mat finalImage;
     finalImage = finalColor(ref, pic, luminance);
     //afficherImage("L'ultime fusion", finalImage);
     string output("result/");
-    output += sortie;
+    output += sortie + ".jpg";
     imwrite(output, finalImage);
-    return EXIT_SUCCESS;
 }

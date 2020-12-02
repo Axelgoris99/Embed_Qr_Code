@@ -3,7 +3,7 @@
 #include <vector>
 #include "qrCode.h"
 /* Ce fichier nous sert pour définir des fonctions intermédiaires lors de la création de notre QR Code */
-//LA fonction du MAIN
+//LA fonction des QR CODE
 qrCode qrGen(std::string const& input);
 
 //Conversion de chaine de caractère vers hexadecimal
