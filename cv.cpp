@@ -418,9 +418,9 @@ vector<float> hsl2BGR(float h, float s, float l)
     b = (b + m) * 255;
     g = (g + m) * 255;
 
-    bgr[2] = round(b);
+    bgr[2] = round(r);
     bgr[1] = round(g);
-    bgr[0] = round(r);
+    bgr[0] = round(b);
 
     return bgr;
 }
@@ -465,6 +465,20 @@ Vec3b lFinal(Vec3b const & bgr, float const lumi)
     {
         float L2 = abs(fL(h[0], h[1], test) - lumi);
         if ( L2 < valeurActuelle)
+        {
+            valeurActuelle = L2;
+            L = test;
+        }
+        test += pas;
+    }
+    //Histoire de raffiner encore un peu le calcul de la luminance
+    test = L-0.005;
+    float sup = L + 0.005;
+    pas = 0.001;
+    while (test < sup)
+    {
+        float L2 = abs(fL(h[0], h[1], test) - lumi);
+        if (L2 < valeurActuelle)
         {
             valeurActuelle = L2;
             L = test;
