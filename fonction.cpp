@@ -62,7 +62,7 @@ qrCode qrGen(string const& input)
 	coco.drawVersion();
 	coco.silentZone();
 	//coco.afficherFormat();
-	coco.debug();
+	//coco.debug();
 	return coco;
 }
 

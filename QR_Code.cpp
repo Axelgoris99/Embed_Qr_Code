@@ -57,7 +57,7 @@ void embedQrPic(string const& input, string const& entre, string const& sortie, 
     Mat qr;
     Mat ref;
     coco.afficherRef();
-    int tailleModule = 15;
+    int tailleModule = 9;
     qr = generateQrPic(qrTab, tailleModule, 0);
     ref = generateQrPic(qrRef, tailleModule, 1);
     //On charge l'image en entrée
@@ -82,6 +82,9 @@ void embedQrPic(string const& input, string const& entre, string const& sortie, 
     Mat finalImage;
     finalImage = finalColor(ref, pic, luminance);
     //afficherImage("L'ultime fusion", finalImage);
+    //Pas optimisé car on repasse sur ce que l'on a déjà fais mais je ne sais pas si ça marche bien comme ça
+    //retirerBord(finalImage, tailleModule, pic);
+
     string output("result/");
     output += sortie + ".jpg";
     imwrite(output, finalImage);
