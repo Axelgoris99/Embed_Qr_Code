@@ -17,3 +17,4 @@ Plusieurs paramètres rentre en jeu :
 
 02-12-2020 : Version MaJ pour ne plus avoir d'inversion des couleurs entre bleu et vert (lié au système BGR utilisé par OpenCV)
 02-12-2020 V2 : Pas mal de légers bugs ont été mis à jour, voir version "Correction".
+16-12-2020 : Probablement la dernière MaJ de ce projet. On a rajouté plusieurs fonctions de "test" comme la disparition de la zone silencieuse ou encore des références mais cela nuit gravement à la lisibilité du QR-Code.
