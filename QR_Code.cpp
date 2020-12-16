@@ -57,7 +57,7 @@ void embedQrPic(string const& input, string const& entre, string const& sortie, 
     Mat qr;
     Mat ref;
     coco.afficherRef();
-    int tailleModule = 15;
+    int tailleModule = 9;
     qr = generateQrPic(qrTab, tailleModule, 0);
     ref = generateQrPic(qrRef, tailleModule, 1);
     //On charge l'image en entrée

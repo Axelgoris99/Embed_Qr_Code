@@ -545,7 +545,58 @@ Mat finalColor(Mat mask, Mat pic, vector<vector<float>> const& luminanceVoulue)
 
     return final;
 }
+Mat finalColorWithRef(Mat mask, Mat pic, vector<vector<float>> const& luminanceVoulue)
+{
+    int ligne = pic.rows;
+    int colonne = pic.cols;
+    cout << "ligne " << ligne << endl;
+    cout << "ligne ref " << mask.rows << endl;
+    Mat final;
+    final.create(ligne, colonne, CV_8UC3);
 
+    for (int i = 0; i < ligne; i++)
+    {
+        //cout << " i Final Color " << i << endl;
+        for (int j = 0; j < colonne; j++)
+        {
+            //cout << " j Final Color " << j << endl;
+            if ((int)mask.at<Vec3b>(i, j)[0] == 128)
+            {
+                Vec3b pixFinal;
+                Vec3b rgb;
+                rgb = pic.at<Vec3b>(i, j);
+                float lumi = luminanceVoulue[i][j];
+                if (lumi == -1)
+                {
+                    pixFinal = rgb;
+                }
+                else {
+                    pixFinal = lFinal(rgb, luminanceVoulue[i][j]);
+                }
+                final.at<Vec3b>(i, j) = pixFinal;
+            }
+            else
+            {
+                Vec3b pixFinal;
+                Vec3b rgb;
+                rgb = pic.at<Vec3b>(i, j);
+                float lumi = luminanceVoulue[i][j];
+                if (lumi == -1)
+                {
+                    pixFinal = rgb;
+                }
+                else {
+                    //if (mask.at<Vec3b>(i, j)[1] == 0 && lumi > 0.5) { lumi = 0.5; }
+                    //if (mask.at<Vec3b>(i, j)[1] == 255 && lumi < 0.5) { lumi = 0.5; }
+                    pixFinal = lFinal(rgb, lumi);
+                }
+                final.at<Vec3b>(i, j) = pixFinal;
+            }
+        }
+    }
+
+    return final;
+}
 
 /* ========= RETIRER ZONE DE SILENCE ==============*/
 void retirerBord(Mat & finalImage, int const& tailleModule, Mat const& pic)
